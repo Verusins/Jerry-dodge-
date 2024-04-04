@@ -177,28 +177,26 @@ not_on3:
 .end_macro
 
 .macro DetectPfLevel3 (%xindex)
-    # reference: blt $t1, 11520, above_ground
-    # $t3 = 0 means in air, $t3 = 1 means on ground/platform
     la $t3, 0
     bge $t1, 11520, on_platform2
-    bge $t1, 7316, on_platform2_half3
-    bge $t1, 7188, on_platform1_half3
-    j not_on2
-on_platform2_half3:
-    ble $t1, 7388, on_platform2
+    # 7168 - 7920
+    bgt $t1, 7920, not_on2
+    blt $t1, 7168, not_on2
+    add $t4, $zero, 256
+    div $t1, $t4
+    mfhi $t5
+    bgt $t5, 220, not_on2
+    blt $t5, 150, branch1
+    j onPlatform
+branch1:
+    bgt $t5, 100, not_on2
+    blt $t5, 20, not_on2
+onPlatform:
     la $t5, 2
     div $t9, $t5
     mfhi $t4
     beq $t4, 0, not_on2
     sub $t9, $t9, 1
-    j not_on2
-on_platform1_half3:
-    ble $t1, 7260, on_platform2
-    la $t5, 2
-    div $t9, $t5
-    mfhi $t4
-    beq $t4, 0, not_on2
-    # sub $t9, $t9, 1
     j not_on2
 on_platform2:
     la $t3, 1
@@ -695,12 +693,12 @@ background:
     # $t1 - $t2 fixed. $t0 for base, $t1 for character position, $t2 for jump force
     # $t9 for storing health etc. 0x00000000, last digit for on jump or not, remaining for frame count
     la $t1, 11280 # 11520
-    # 2644 - 2716
+    # 2644 - 2716 # l 824 
     la $t2, 0
     la $s0, 3 # store health
     # s1 for smallest interval between damage
     # s4-s7 store bullet location
-    la $s2, 2
+    la $s2, 0
     # s2 to store for levels
 
 next_level:
