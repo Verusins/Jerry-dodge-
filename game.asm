@@ -14,13 +14,13 @@
 #
 # Which milestoneshave been reached in this submission?
 # (See the assignment handout for descriptions of the milestones)
-# - Milestone 3 (choose the one the applies)
+# - Milestone 4 (choose the one the applies)
 #
 # Which approved features have been implemented for milestone 4?
 # (See the assignment handout for the list of additional features)
-# 1. (fill in the feature, if any)
-# 2. (fill in the feature, if any)
-# 3. (fill in the feature, if any)
+# 1. Different levels (2 marks)
+# 2. Disappearing platform (1 mark)
+# 3. Moving objects (2 marks)
 # ... (add more if necessary)
 #
 # Link to video demonstration for final submission:
@@ -30,7 +30,7 @@
 # - yes, and please share this project github link as well!
 #
 # Any additional information that the TA needs to know:
-# - (write here, if any)
+# N/A
 #
 #####################################################################
 
@@ -46,6 +46,7 @@ color_green: .word 0x33DE72     # Green color
 color_blue: .word 0x42B4FF      # Blue color (main)
 color_lightblue: .word 0x99E7EE # Blue for water body
 color_water: .word 0x4F47ED     # Water Dark Blue / Quicksand
+# A: .word 4 8 12 256 272 512 516 520 524 528 -1
 
 # make the whole page white
 .macro ClearPage
@@ -53,6 +54,7 @@ color_water: .word 0x4F47ED     # Water Dark Blue / Quicksand
     li $t4, 4096 # ending condition
     lw $t5, color_white # color
     addi $t6, $t0, 0 # counter (for paint)
+    
 background:
     sw $t5, ($t6) # paint the pixel
     addi $t3, $t3, 1 # Increment loop counter
@@ -148,19 +150,19 @@ ground:
     bne $t3, $t4, ground  # Branch to loop if not equal
 .end_macro
 
-.macro MakeLevel1Pf
+.macro MakeLevel2Pf
     DrawWaterPlatformAt 0 8192
     DrawWaterPlatformAt 16 8192
     DrawWaterPlatformAt 32 8192
     DrawWaterPlatformAt 48 8192
 .end_macro
 
-.macro MakeLevel2Pf
+.macro MakeLevel3Pf
     DrawWaterPlatformAt 8 8192
     DrawWaterPlatformAt 40 8192
 .end_macro
 
-.macro DetectPfLevel1 (%xindex)
+.macro DetectPfLevel2 (%xindex)
     # reference: blt $t1, 11520, above_ground
     # $t3 = 0 means in air, $t3 = 1 means on ground/platform
     la $t3, 0
@@ -174,7 +176,7 @@ on_platform3:
 not_on3:
 .end_macro
 
-.macro DetectPfLevel2 (%xindex)
+.macro DetectPfLevel3 (%xindex)
     # reference: blt $t1, 11520, above_ground
     # $t3 = 0 means in air, $t3 = 1 means on ground/platform
     la $t3, 0
@@ -184,9 +186,19 @@ not_on3:
     j not_on2
 on_platform2_half3:
     ble $t1, 7388, on_platform2
+    la $t5, 2
+    div $t9, $t5
+    mfhi $t4
+    beq $t4, 0, not_on2
+    sub $t9, $t9, 1
     j not_on2
 on_platform1_half3:
     ble $t1, 7260, on_platform2
+    la $t5, 2
+    div $t9, $t5
+    mfhi $t4
+    beq $t4, 0, not_on2
+    # sub $t9, $t9, 1
     j not_on2
 on_platform2:
     la $t3, 1
@@ -194,38 +206,33 @@ not_on2:
 .end_macro
 
 .macro InitialBulletLv1
-    # add $s4, $t0, 11300 # 11516
-    # add $s5, $t0, 7292
     add $s4, $zero, 11516
-    add $s5, $zero, 7292
     add $t4, $t0, $s4
-    add $t5, $t0, $s5
     lw $t3, color_red
     sw $t3, ($t4)
-    sw $t3, ($t5)
 .end_macro
 
 .macro InitialBulletLv2
+    add $s4, $zero, 11516
+    add $s5, $zero, 7292
     add $s6, $zero, 11388
+    add $t4, $t0, $s4
+    add $t5, $t0, $s5
     add $t6, $t0, $s6
     lw $t3, color_red
+    sw $t3, ($t4)
+    sw $t3, ($t5)
     sw $t3, ($t6)
 .end_macro
 
 .macro UpdateNDrawBulletLv1
     add $t4, $s4, $t0
-    add $t5, $s5, $t0
-    
     lw $t3, color_white
     sw $t3, ($t4)
-    sw $t3, ($t5)
     lw $t3, color_red
     sub $s4, $s4, 4
-    add $s5, $s5, 4
     add $t4, $s4, $t0
-    add $t5, $s5, $t0
     sw $t3, ($t4)
-    sw $t3, ($t5)
 
     li $t0, BASE_ADDRESS
     add $t0, $t0, 11260
@@ -235,14 +242,6 @@ not_on2:
     lw $t3, color_red
     add $s4, $s4, 256 # 11516
 loopB11:
-    li $t0, BASE_ADDRESS
-    add $t0, $t0, 7424
-    blt $t5, $t0, loopB12
-    lw $t3, color_white
-    sw $t3, ($t5)
-    lw $t3, color_red
-    add $s5, $s5, -256 # 7168
-loopB12:
 .end_macro
 
 .macro UpdateDrawBulletLv2
@@ -254,6 +253,52 @@ loopB12:
     sw $t3, ($t4)
     sw $t3, ($t6)
     lw $t3, color_white
+    sw $t3, ($t5)
+    lw $t3, color_red
+    sub $s4, $s4, 4
+    sub $s5, $s5, 4
+    add $s6, $s6, 4
+    add $t4, $s4, $t0
+    add $t5, $s5, $t0
+    add $t6, $s6, $t0
+    sw $t3, ($t4)
+    sw $t3, ($t5)
+    sw $t3, ($t6)
+
+    li $t0, BASE_ADDRESS
+    add $t0, $t0, 11260
+    bgt $t4, $t0, loopB11
+    lw $t3, color_lightblue
+    sw $t3, ($t4)
+    lw $t3, color_red
+    add $s4, $s4, 256 # 11516
+loopB11:
+    li $t0, BASE_ADDRESS
+    add $t0, $t0, 7164
+    bgt $t5, $t0, loopB12
+    lw $t3, color_white
+    sw $t3, ($t5)
+    lw $t3, color_red
+    add $s5, $s5, 256 # 7168
+loopB12:
+    li $t0, BASE_ADDRESS
+    add $t0, $t0, 11516
+    blt $t6, $t0, loopB21
+    lw $t3, color_lightblue
+    sw $t3, ($t6)
+    lw $t3, color_red
+    add $s6, $s6, -256 # 7168
+loopB21:
+.end_macro
+
+.macro UpdateDrawBulletLv3
+    add $t4, $s4, $t0
+    add $t5, $s5, $t0
+    add $t6, $s6, $t0
+    
+    lw $t3, color_white
+    sw $t3, ($t4)
+    sw $t3, ($t6)
     sw $t3, ($t5)
     lw $t3, color_red
     sub $s4, $s4, 4
@@ -386,6 +431,7 @@ left:
     add $t6, $t6, $t0
     add $t0, $t0, 8192
 ground:
+    bne $s2, 2, aboveWater
     blt $t6, $t0, aboveWater
     lw $t5, color_lightblue # color
 aboveWater:
@@ -446,9 +492,21 @@ moreThan2Health:
     add $t3, %time, 0
     addi $t6, $t0, 484
     lw $t4, color_green
+    bge $t3, 100, percent10
+    lw $t4, color_gray
+percent10:
+    addi $t6, $t6, 4
+    sw $t4, 0($t6)
+    sw $t4, 256($t6)
     bge $t3, 200, percent20
     lw $t4, color_gray
 percent20:
+    addi $t6, $t6, 4
+    sw $t4, 0($t6)
+    sw $t4, 256($t6)
+    bge $t3, 300, percent30
+    lw $t4, color_gray
+percent30:
     addi $t6, $t6, 4
     sw $t4, 0($t6)
     sw $t4, 256($t6)
@@ -458,21 +516,9 @@ percent40:
     addi $t6, $t6, 4
     sw $t4, 0($t6)
     sw $t4, 256($t6)
-    bge $t3, 600, percent60
+    bge $t3, 500, percent50
     lw $t4, color_gray
-percent60:
-    addi $t6, $t6, 4
-    sw $t4, 0($t6)
-    sw $t4, 256($t6)
-    bge $t3, 800, percent80
-    lw $t4, color_gray
-percent80:
-    addi $t6, $t6, 4
-    sw $t4, 0($t6)
-    sw $t4, 256($t6)
-    bge $t3, 950, percent95
-    lw $t4, color_gray
-percent95:
+percent50:
     addi $t6, $t6, 4
     sw $t4, 0($t6)
     sw $t4, 256($t6)
@@ -489,6 +535,66 @@ background:
     addi $t3, $t3, 1 # Increment loop counter
     addi $t6, $t6, 4 # Compare loop counter with loop limit
     bne $t3, $t4, background  # Branch to loop if not equal
+    
+    lw $t5, color_white
+
+    addi $t6, $t0, 6748
+    sw $t5, 4($t6)
+    sw $t5, 8($t6)
+    sw $t5, 12($t6)
+    sw $t5, 16($t6)
+    sw $t5, 28($t6)
+    sw $t5, 32($t6)
+    sw $t5, 48($t6)
+    sw $t5, 52($t6)
+    sw $t5, 56($t6)
+    sw $t5, 68($t6)
+    sw $t5, 72($t6)
+    sw $t5, 76($t6)
+    
+    addi $t6, $t6, 260
+    sw $t5, 0($t6)
+    sw $t5, 12($t6)
+    sw $t5, 20($t6)
+    sw $t5, 32($t6)
+    sw $t5, 40($t6)
+    sw $t5, 60($t6)
+    
+    addi $t6, $t6, 256
+    sw $t5, 0($t6)
+    sw $t5, 4($t6)
+    sw $t5, 8($t6)
+    sw $t5, 12($t6)
+    sw $t5, 20($t6)
+    sw $t5, 24($t6)
+    sw $t5, 28($t6)
+    sw $t5, 32($t6)
+    sw $t5, 40($t6)
+    sw $t5, 44($t6)
+    sw $t5, 48($t6)
+    sw $t5, 52($t6)
+    sw $t5, 60($t6)
+    sw $t5, 64($t6)
+    sw $t5, 68($t6)
+    sw $t5, 72($t6)
+    
+    addi $t6, $t6, 256
+    sw $t5, 0($t6)
+    sw $t5, 20($t6)
+    sw $t5, 32($t6)
+    sw $t5, 52($t6)
+    sw $t5, 72($t6)
+    
+    addi $t6, $t6, 256
+    sw $t5, 0($t6)
+    sw $t5, 20($t6)
+    sw $t5, 32($t6)
+    sw $t5, 40($t6)
+    sw $t5, 44($t6)
+    sw $t5, 48($t6)
+    sw $t5, 60($t6)
+    sw $t5, 64($t6)
+    sw $t5, 68($t6)
 .end_macro
 
 .macro DrawFailScreen
@@ -502,8 +608,10 @@ background:
     addi $t6, $t6, 4 # Compare loop counter with loop limit
     bne $t3, $t4, background  # Branch to loop if not equal
     
-    addi $t6, $t0, 5744
     lw $t5, color_white
+
+    addi $t6, $t0, 5744
+    
     sw $t5, 8($t6)
     sw $t5, 12($t6)
     sw $t5, 16($t6)
@@ -543,37 +651,33 @@ background:
     sw $t5, 1544($t6)
     sw $t5, 1556($t6)
     
-    
-    sw $t5, 2300($t6)
-    sw $t5, 2304($t6)
-    sw $t5, 2308($t6)
-    sw $t5, 2312($t6)
-    sw $t5, 2324($t6)
-    sw $t5, 2328($t6)
-    sw $t5, 2332($t6)
-    sw $t5, 2336($t6)
-    
-    sw $t5, 2556($t6)
-    sw $t5, 2564($t6)
-    sw $t5, 2580($t6)
-    sw $t5, 2588($t6)
-    
-    sw $t5, 2812($t6)
-    sw $t5, 2816($t6)
-    sw $t5, 2820($t6)
-    sw $t5, 2836($t6)
-    sw $t5, 2840($t6)
-    sw $t5, 2844($t6)
-    
-    sw $t5, 3076($t6)
-    sw $t5, 3100($t6)
-    
-    sw $t5, 3324($t6)
-    sw $t5, 3328($t6)
-    sw $t5, 3332($t6)
-    sw $t5, 3348($t6)
-    sw $t5, 3352($t6)
-    sw $t5, 3356($t6)
+    add $t6, $t6, 2300
+    sw $t5, 4($t6)
+    sw $t5, 8($t6)
+    sw $t5, 12($t6)
+    sw $t5, 28($t6)
+    sw $t5, 32($t6)
+    sw $t5, 36($t6)
+    add $t6, $t6, 256
+    sw $t5, ($t6)
+    sw $t5, 24($t6)
+    add $t6, $t6, 256
+    sw $t5, ($t6)
+    sw $t5, 8($t6)
+    sw $t5, 12($t6)
+    sw $t5, 24($t6)
+    sw $t5, 32($t6)
+    sw $t5, 36($t6)
+    add $t6, $t6, 256
+    sw $t5, ($t6)
+    sw $t5, 12($t6)
+    sw $t5, 24($t6)
+    sw $t5, 36($t6)
+    add $t6, $t6, 256
+    sw $t5, 4($t6)
+    sw $t5, 8($t6)
+    sw $t5, 28($t6)
+    sw $t5, 32($t6)
 .end_macro
 
 
@@ -596,14 +700,21 @@ background:
     la $s0, 3 # store health
     # s1 for smallest interval between damage
     # s4-s7 store bullet location
-    la $s2, 1
+    la $s2, 2
     # s2 to store for levels
-    
+
+next_level:
+    add $s2, $s2, 1
     ClearPage
     MakeGround
+    bne $s2, 2, noWater
     MakeWater
+noWater:
+    bne $s2, 1, drawBulletLv2
     InitialBulletLv1
-    InitialBulletLv2
+    j main_loop
+drawBulletLv2:
+    InitialBulletLv2 # Bullet Lv2 and Lv3 share the same :)
         
 main_loop:
 
@@ -636,7 +747,7 @@ respond_right:
     add $t1, $t1, 8
     j validate_height
 jump:
-    # setting the speed_up (t2) to 5
+    # setting the speed_up (t2) to 7
     # extract jump digit
     la $t5, 2
     div $t9, $t5
@@ -661,11 +772,17 @@ validate_height:
     # if not on ground, add gravity acceleration
     # 2644 - 2716
     bgt $t1, 11264, update_y_true
+    blt $s2, 3, level2ifs
+    j level3ifs
+level3ifs:
+    bge $t1, 7572, on_platform2_half
+    bge $t1, 7444, on_platform1_half
+    bge $t1, 7316, on_platform2_half2
+    bge $t1, 7188, on_platform1_half2
+    j breakpoint
+level2ifs:
     bge $t1, 6656, on_platform0_half
-    # bge $t1, 7572, on_platform2_half
-    # bge $t1, 7444, on_platform1_half
-    # bge $t1, 7316, on_platform2_half2
-    # bge $t1, 7188, on_platform1_half2
+breakpoint:
     ble $t1, 3328, on_platform3_half
     j not_on
 on_platform0_half:
@@ -691,7 +808,7 @@ on_platform3_half:
     bgt $t0, 156, not_on
     j update_y
 not_on:
-    # DetectPfLevel1 ($t1)
+    # DetectPfLevel3 ($t1)
     sub $t2, $t2, 2
     j update_y_true
 
@@ -711,10 +828,18 @@ on_platform:
     # not sinking to the ground, store $t3 as if on ground
     # blt $t1, 11520, above_ground # 11520
     # $t3 = 0 means in air, $t3 = 1 means on ground/platform
-    DetectPfLevel1 ($t1)
+    bne $s2, 2, notLv2
+    DetectPfLevel2 ($t1)
+notLv2:
+    bne $s2, 3, notLv3
+    DetectPfLevel3 ($t1)
+notLv3:
     beq $t3, 0, above_ground
 
 on_ground:
+    beq $s2, 2, NoLv2Water
+    # ble $t1, 11520, above_ground
+NoLv2Water:
     sub $t1, $t1, 256
     ble $t1, 11520, above_ground
     la $t2, 0 # reset jump force
@@ -722,7 +847,7 @@ on_ground:
     la $t5, 2
     div $t9, $t5
     mfhi $t4
-    beq $t4, 0 on_ground
+    beq $t4, 0, on_ground
     sub $t9, $t9, 1
     
     j on_ground
@@ -740,7 +865,7 @@ no_key:
     
     # add time/frame counter
     add $t9, $t9, 2
-    bge $t9, 1000, level1_success
+    bge $t9, 600, level_success
     
     # detect collision and add health
     BulletCollision $t1 $s4
@@ -760,6 +885,7 @@ readyForDamage:
     # DrawPowerUp 15 409
     
     # temp platform counter calc
+    beq $s2, 1, disPfEnd
     add $t3, $zero, 250
     div $t9, $t3
     mfhi $t3
@@ -795,10 +921,22 @@ characterNormalHurt:
     j characterFinished
 characterFinished:
     MakeEyes
-    MakeLevel1Pf # renew platforms
+    bne $s2, 2, notLv2pf
+    MakeLevel2Pf # renew platforms
+notLv2pf:
+    bne $s2, 3, notLv3pf
+    MakeLevel3Pf
+notLv3pf:
 
-    # UpdateNDrawBulletLv1 # update bullet
+    bne $s2, 1, notLv1Bullet
+    UpdateNDrawBulletLv1 # update bullet
+notLv1Bullet:
+    bne $s2, 2, notLv2Bullet
     UpdateDrawBulletLv2 # update bullet
+notLv2Bullet:
+    bne $s2, 3, notLv3Bullet
+    UpdateDrawBulletLv3 # update bullet
+notLv3Bullet:
     DrawHealth ($s0) # draw health bar
     DrawProgress ($t9) # draw progress
 
@@ -807,16 +945,19 @@ characterFinished:
     syscall
     j main_loop
     
-level1_success:
+level_success:
     DrawSuccessScreen
     li $v0, 32
-    li $a0, 3000
+    li $a0, 1000
     syscall
-    j main_loop
-    
+    add $t9, $zero, 0
+    beq $s2, 3, succeed
+    j next_level
 
 
 failed:
     DrawFailScreen
+succeed:
     li $v0, 10 # terminate the program gracefully
     syscall
+    
