@@ -24,7 +24,8 @@
 # ... (add more if necessary)
 #
 # Link to video demonstration for final submission:
-# - (insert YouTube / MyMedia / other URL here). Make sure we can view it!
+# - https://github.com/Verusins/Jerry-dodge- (github)
+# - https://youtu.be/ayTEwwVGEBY (YouTube)
 #
 # Are you OK with us sharing the video with people outside course staff?
 # - yes, and please share this project github link as well!
@@ -692,7 +693,6 @@ background:
     li $t0, BASE_ADDRESS # $t0 stores the base address for display
     # $t1 - $t2 fixed. $t0 for base, $t1 for character position, $t2 for jump force
     # $t9 for storing health etc. 0x00000000, last digit for on jump or not, remaining for frame count
-    la $t1, 11280 # 11520
     # 2644 - 2716 # l 824 
     la $t2, 0
     la $s0, 3 # store health
@@ -702,6 +702,7 @@ background:
     # s2 to store for levels
 
 next_level:
+    la $t1, 11280 # 11520
     add $s2, $s2, 1
     ClearPage
     MakeGround
@@ -838,8 +839,13 @@ on_ground:
     beq $s2, 2, NoLv2Water
     # ble $t1, 11520, above_ground
 NoLv2Water:
+    beq $s2, 1, weirdGravityLv1
     sub $t1, $t1, 256
+weirdGravityLv1:
     ble $t1, 11520, above_ground
+    bne $s2, 1, weirdGravity
+    sub $t1, $t1, 256
+weirdGravity:
     la $t2, 0 # reset jump force
     # reset $t9 0 if its jumping
     la $t5, 2
@@ -879,8 +885,6 @@ cooldown:
     beq $s1, 0, readyForDamage
     sub $s1, $s1, 1
 readyForDamage:
-    
-    # DrawPowerUp 15 409
     
     # temp platform counter calc
     beq $s2, 1, disPfEnd
